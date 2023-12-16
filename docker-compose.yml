@@ -1,0 +1,39 @@
+services:
+    rust-pgvector-example:
+        build:
+            context: .
+        command: cargo run --release
+        restart: no
+        volumes:
+            - type: bind
+              source: ./.env
+              target: /app/.env
+              read_only: true
+        depends_on:
+            db-migrate:
+                condition: service_completed_successfully
+    db-migrate:
+        build:
+            context: .
+        command: bash -c 'sqlx database create && sqlx migrate run'
+        volumes:
+            - type: bind
+              source: ./.env
+              target: /app/.env
+              read_only: true
+        depends_on:
+            postgres:
+                condition: service_started
+    postgres:
+        image: ankane/pgvector
+        restart: always
+        env_file:
+            - .env
+    pgadmin:
+        container_name: pgadmin4_container
+        image: dpage/pgadmin4
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - "127.0.0.1:7520:80"
